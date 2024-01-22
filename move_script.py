@@ -1,20 +1,14 @@
-import dronekit_sitl
-sitl = dronekit_sitl.start_default()
-connection_string = sitl.connection_string()
-
-from dronekit import connect, VehicleMode, LocationGlobalRelative
+from dronekit import connect, VehicleMode
 import time
 import math
 
-# З'єднання з дроном
-connection_string = 'udp:127.0.0.1:14550'
+# З'єднання з SITL (переконайтеся, що SITL запущено і слухає на вказаному порту)
+connection_string = 'tcp:127.0.0.1:5763'
 vehicle = connect(connection_string, wait_ready=True)
-
 
 # Функція для зміни режиму AltHold
 def set_alt_hold_mode():
     vehicle.mode = VehicleMode("ALT_HOLD")
-
 
 # Функція для здійснення зліту
 def takeoff(altitude):
@@ -33,32 +27,28 @@ def takeoff(altitude):
 
     vehicle.channels.overrides = {}
 
-
 # Функція для визначення відстані між двома точками
 def get_distance(location1, location2):
     dlat = location2.lat - location1.lat
     dlong = location2.lon - location1.lon
-    return math.sqrt(dlat ** 2 + dlong ** 2) * 1.113195e5  # Використовуємо формулу для переведення градусів у метри
-
+    return math.sqrt(dlat**2 + dlong**2) * 1.113195e5  # Використовуємо формулу для переведення градусів у метри
 
 # Функція для руху вперед на задану відстань
 def move_forward(distance):
     initial_location = vehicle.location.global_relative_frame
     target_location = initial_location.get_location_ned(0, distance, 0)
-
+    
     while get_distance(vehicle.location.global_relative_frame, target_location) > 1:
         vehicle.channels.overrides = {}
         vehicle.channels.overrides['1'] = 1500  # Рух вперед
         time.sleep(0.1)
-
+    
     vehicle.channels.overrides = {}
-
 
 # Функція для повороту на азимут (yaw)
 def rotate_yaw(yaw):
     vehicle.channels.overrides = {}
     vehicle.channels.overrides['4'] = 1500 + int(yaw / 2)  # Поворот
-
 
 # Змінні для точок A та B (нові значення)
 point_a = (50.450739, 30.461242, 100)
@@ -77,5 +67,5 @@ move_forward(distance_ab)
 # Поворот на азимут 350 градусів
 rotate_yaw(350)
 
-# Закриття з'єднання з дроном
+# Закриття з'єднання з SITL
 vehicle.close()
